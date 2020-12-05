@@ -216,7 +216,7 @@ def update_graph_scatter(input,n_clicks,  symbol, period, interval):
     graph_object.m_is_working=True
     symbols = ["SPY"]
     symbols.append(symbol.upper())
-    print("input ", input, symbols, period, interval)
+    #print("input ", input, symbols, period, interval)
     price_data = yf.download(symbols,period=period,interval=interval)
     fig= graph_object.generate_fig(price_data,symbols)
     graph_object.m_is_working = False

@@ -257,12 +257,13 @@ if __name__ == '__main__':
     emailhelper.send_email("Super Trend Watch List","", files, CWD)
     '''
 
-    symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND",
+    symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND","CRSR",
                "NIO", "TSLA", "DIS", "WMT", "BILI", "SQ", "XLNX", "AMD", "SPG", "O",
                "BAC", "JPM", "MSFT", "FB", "ADSK", "ADBE", "MRK", "MDB", "COF",
                "VZ", "M", "APO", "COST", "QCOM", "MU", "LMT", "SBUX", "DIS", "ASML",
-               "DADA", "TAL", "FSR", "SE", "TDOC", "SDC", "AXP", "MA", "UAL",
-               "JKS","NKLA","ZTO","SLQT"]
+               "DADA", "TAL", "FSR", "SE", "TDOC", "SDC", "AXP", "MA", "UAL","U",
+               "JKS","NKLA","ZTO","SLQT","PLTR","NIO","BYDDF","LI","XPEV","CIIC",
+               "EDU"]
 
     # symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND"]
 

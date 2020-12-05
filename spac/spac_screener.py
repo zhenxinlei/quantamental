@@ -14,7 +14,7 @@ CWD  = os.path.dirname(os.path.realpath(__file__))+"/"
 
 
 def load_spac_info(path_to_csv="active_spacs_clean.csv"):
-    df = pd.read_csv(path_to_csv)
+    df = pd.read_csv(path_to_csv,encoding = "ISO-8859-1")
     return df
 
 
