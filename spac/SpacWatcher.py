@@ -167,15 +167,19 @@ class NewsFtecher():
                 return html.fromstring(content.text), content.url
             else:
                 return content.text, content.url
-        except (asyncio.TimeoutError, requests.exceptions.Timeout):
-            raise ConnectionTimeout(url)
+        except Exception as e :
+            logging.exception(" error in get http request ")
+            return None, None
+
 
     def get_page(self,ticker):
         global STOCK_PAGE
 
         if ticker not in self.STOCK_PAGE:
+
             self.STOCK_PAGE[ticker], _ = self.http_request_get(
                 url=self.STOCK_URL, payload={'t': ticker}, parse=True)
+
 
     def get_news(self,ticker):
         """
@@ -186,6 +190,9 @@ class NewsFtecher():
 
         self.get_page(ticker)
         page_parsed = self.STOCK_PAGE[ticker]
+        if page_parsed is None:
+            return [("","","")]
+
         news_table = page_parsed.cssselect('[id="news-table"]')
         last_date = None
 
@@ -298,19 +305,20 @@ class SpacWatcher():
                 is_first_news=False
                 values.append(tmp)
                 count +=1
-                if count> max_news_number:
+                if count>= max_news_number:
                     break
-
 
         self.gs.write(self.sheet_id, range,values)
 
     def get_news_symbols(self):
-        range = "news!A2:A"
+        range = "watchlist!B2:B"
         news_symbols = self.gs.read(self.sheet_id, range)
-        tickers = []
-        for sym in news_symbols:
-            if len(sym)>0:
-                tickers.append(sym[0])
+        tickers=[]
+        for symbol in news_symbols:
+            if len(symbol[0])==0:
+                continue
+            tickers.append(symbol[0])
+        tickers = sorted(set(tickers))
 
         return tickers
 
@@ -343,12 +351,25 @@ if __name__ == '__main__':
     args = str(sys.argv)
 
     spacWatcher = SpacWatcher()
+
+    '''
+    tickers = spacWatcher.get_news_symbols()
+    print(" get news ", tickers)
+    news_dict = {}
+    for ticker in tickers:
+        news = NewsFtecher().get_news(ticker)
+        news_dict[ticker] = news
+    spacWatcher.write_news_to_sheet(news_dict, True, 5)
+    '''
+
+
     if "news" in args:
         tickers = spacWatcher.get_news_symbols()
         print(" get news ",tickers)
         news_dict = {}
         for ticker in tickers:
             news = NewsFtecher().get_news(ticker)
+
             news_dict[ticker] = news
         spacWatcher.write_news_to_sheet(news_dict,True, 10)
         pass

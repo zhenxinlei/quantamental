@@ -45,7 +45,7 @@ class GoogleSheetController:
             service =self.__getService()
             request = service.spreadsheets().values().get(spreadsheetId=sheet_id, range=range)
             response = request.execute()
-
+            print("read response {}".format(response))
             return response['values']
         except:
             return None
