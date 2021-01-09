@@ -37,10 +37,41 @@ def append_fwd_return_cols(org_df, col_name, window, look_fwd, axis=1, level=0):
 
     return org_df
 
+''' sma lines'''
+def append_sma_cols(org_df, col_name, window, axis=1, level=0):
+    new_col_name = "{COL}_SMA{WIN}".format(COL=col_name,  WIN=window)
+    org_df = org_df.drop(new_col_name, axis=axis, level=level)  # drop if exist
+
+    rolling_mean = org_df.xs(col_name, axis=axis, level=level, drop_level=False).rolling(window=window).mean()
+    return_cols = rolling_mean.rename(columns={col_name: new_col_name})
+
+
+    org_df = org_df.join(return_cols)
+
+    return org_df
+
+''' ema lines '''
+def append_ema_cols(org_df, col_name, window, axis=1, level=0):
+    new_col_name = "{COL}_EMA{WIN}".format(COL=col_name,  WIN=window)
+    org_df = org_df.drop(new_col_name, axis=axis, level=level)  # drop if exist
+
+    tmp = org_df.xs(col_name, axis=axis, level=level, drop_level=False)
+    ema_tmp = tmp.copy()
+    for symbol in tmp.columns.levels[1]:
+        try:
+            ema = talib.EMA(tmp[col_name, symbol],window)
+
+            ema_tmp[col_name, symbol] = ema
+        except:
+            pass
+
+    ema_tmp = ema_tmp.rename(columns={col_name: new_col_name})
+    org_df = org_df.join(ema_tmp)
+
+    return org_df
+
 
 '''ema macd'''
-
-
 def append_macd_cols(org_df, col_name, fastperiod=12, slowperiod=26, signalperiod=9
                      , fastmatype=1, slowmatype=1,
                      signalmatype=1, axis=1, level=0):

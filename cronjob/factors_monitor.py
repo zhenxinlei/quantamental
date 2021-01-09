@@ -15,6 +15,9 @@ from plotly.subplots import make_subplots
 from spac.config import Secret, Config
 import os
 
+import factors.MomentumFilter as mom_fact
+
+
 CWD = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 
@@ -81,9 +84,9 @@ def generate_super_trend_graph(org_df, super_trend_line, cross_up, cross_dn, ope
 
 
 
-def generate_nice_graph(df, symbols, filename="graph.html"):
-    file_path = CWD + filename
-    file = open(file_path, 'w+')
+def generate_nice_graph(df, symbols, filename="graph", index_file_name="index.html"):
+    index_file = open(CWD + index_file_name, 'w')
+
     high_name = 'High'
     low_name = 'Low'
     open_name = 'Open'
@@ -118,8 +121,18 @@ def generate_nice_graph(df, symbols, filename="graph.html"):
     df = fty.append_bollinger_band_cols(df, 'Close')
     df = fty.append_bollinger_band_cols(df, 'Close', timeperiod=60)
 
+
+    #get long/short filtered symbol
+    long_symbols, short_symbols = mom_fact.mom_entry_filter(df)
+
     # indiviual symbol
     for sym_index in range(len(symbols)):
+
+        if sym_index % 10 == 0:
+            new_file_name = "{cwd}{filename}{index}.html".format(cwd=CWD,index=sym_index, filename=filename)
+            file = open(new_file_name, 'w+')
+            index_file.write("<a href>file://{path}</a><br/>".format(path=new_file_name))
+            print( " open file ", new_file_name)
 
         symbol = symbols[sym_index]
         price_df = pd.DataFrame()
@@ -147,11 +160,26 @@ def generate_nice_graph(df, symbols, filename="graph.html"):
         price_df['bbm_fst'] = df['BB_MID_60'][symbol]
         price_df['bbl_fst'] = df['BB_LOW_60'][symbol]
 
+        scores = None
+        direction= None
+        if symbol in long_symbols:
+            scores = long_symbols[symbol]
+            direction = "BUY"
+        elif symbol in short_symbols:
+            scores = short_symbols[symbol]
+            direction = "SELL"
+        if scores is not None:
+            title = "{index} {symbol}: {direction} {ma_list}".format(ma_list=scores['ma_list'], direction=direction,
+                                                                     symbol=symbol, index=sym_index)
+        else:
+            title = "{index} {symbol} ".format(symbol=symbol, index=sym_index)
+
+
         tmp = price_df[['ema_5', 'ema_10', 'ema_14', 'ema_21', 'ema_30', 'ema_60', 'ema_120', 'ema_250']]
         # fig = make_subplots(specs=[[{"secondary_y": True}]])
         fig = make_subplots(specs=[[{"secondary_y": True}], [{"secondary_y": True}], [{"secondary_y": True}]],
                             rows=3, cols=1, row_heights=[1.6, 0.5, 0.5])
-        fig.update_layout(title="{}:{}".format(sym_index, symbol), autosize=False, width=1000, height=1000,
+        fig.update_layout(title=title, autosize=False, width=1000, height=1000,
                           xaxis_rangeslider_visible=False)
 
         fig.add_trace(go.Candlestick(x=df.index,
@@ -221,20 +249,27 @@ def generate_nice_graph(df, symbols, filename="graph.html"):
         # fig.show()
         file.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))  # write plot to file
 
-        if sym_index % 10 == 0 and sym_index != 0:
+
+        if sym_index %10 ==9:
             file.close()
-            print(" open new file ", CWD + "{}_{}".format(sym_index, filename))
-            file = open(CWD + "{}_{}".format(sym_index, filename), 'w+')
 
     file.close()
+    index_file.close()
 
-    for file in glob(CWD + '*.html'):
-        now = time.time()
-        modi_time = os.path.getmtime(file)
-        if modi_time + 24 * 3600 < now:
-            continue
-        webbrowser.open('file://' + file)
+    # open all html files
+    # for file in glob(CWD + '*.html'):
+    #     now = time.time()
+    #     modi_time = os.path.getmtime(file)
+    #     if modi_time + 24 * 3600 < now:
+    #         continue
+    #     webbrowser.open('file://' + file)
+
+    webbrowser.open('file://'+CWD+index_file_name)
     return [file]
+
+
+
+
 
 
 def send_email(filename):
@@ -257,15 +292,16 @@ if __name__ == '__main__':
     emailhelper.send_email("Super Trend Watch List","", files, CWD)
     '''
 
-    symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND","CRSR",
+    symbols = ["MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND","CRSR",
                "NIO", "TSLA", "DIS", "WMT", "BILI", "SQ", "XLNX", "AMD", "SPG", "O",
                "BAC", "JPM", "MSFT", "FB", "ADSK", "ADBE", "MRK", "MDB", "COF",
                "VZ", "M", "APO", "COST", "QCOM", "MU", "LMT", "SBUX", "DIS", "ASML",
-               "DADA", "TAL", "FSR", "SE", "TDOC", "SDC", "AXP", "MA", "UAL","U",
-               "JKS","NKLA","ZTO","SLQT","PLTR","NIO","BYDDF","LI","XPEV","CIIC",
-               "EDU"]
+               "DADA", "TAL", "SE", "TDOC", "SDC", "AXP", "MA", "UAL","U","SHLX",
+               "SLQT","PLTR","NIO","BYDDF","LI","XPEV","CIIC","TSM","RXT","NKE",
+               "EDU","KKR","FTCH","NRG","OPEN"]
 
-    # symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND"]
+    #symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND","ADS"]
+
 
     symbols = sorted(list(set(symbols)))
     print(symbols)

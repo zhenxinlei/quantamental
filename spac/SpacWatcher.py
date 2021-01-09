@@ -3,7 +3,7 @@ import re
 import logging
 import operator
 import requests
-import asyncio
+import argparse
 import datetime
 import sys
 from lxml import html
@@ -13,7 +13,10 @@ from utils.GoogleSheetController import GoogleSheetController
 OPS= {">": operator.gt, ">=": operator.ge,
         "<": operator.lt, "<=": operator.le, }
 
+
 SPREADSHEET_ID = '1_96TAcYvT07e9Lriur6YTQhTL30_G2bF8jM3_4tgNkc'
+#COPY_SHEET_ID = '17XDuX9bJvIZqK4s9kJeDkckzKZFeUMZD3_Jy_Q14Pfw'
+#SPREADSHEET_ID = COPY_SHEET_ID
 
 from spac.spac_screener import load_hist_data
 
@@ -80,8 +83,9 @@ class FilterCondition():
 
 
 class Filter():
-    def __init__(self, name):
+    def __init__(self, name, interval):
         self.name = name
+        self.interval = interval
         pass
 
     def parseStringToFormula(self, formula_str, benchmark_val,):
@@ -94,8 +98,8 @@ class Filter():
 class AndFilter(Filter):
 
 
-    def __init__(self, name):
-        super(AndFilter,self).__init__(name)
+    def __init__(self, name,interval):
+        super(AndFilter,self).__init__(name,interval)
         self.conditions = []
 
     def addCondition(self, condition:FilterCondition):
@@ -232,6 +236,12 @@ class SpacWatcher():
         self.sheet_id= SPREADSHEET_ID
 
     def gen_filtered_df(self,price_df, filter, close_col='Close', volume_col='Volume', look_back=10, ma_window=10):
+        today = datetime.datetime.today().date()
+        if price_df.index[-1].date() != today and filter.interval=='1h':
+            print("Didn't get price update for today ", today)
+            return
+
+
         #get yester tickker
         data = self.gs.read(self.sheet_id,filter.name+"!A2:G")
         old_data = []
@@ -244,10 +254,16 @@ class SpacWatcher():
 
         #print("yester day data ",old_data)
         old_tickers =[]
+
         if len(old_data)>2:
-            old_tickers.extend([x.strip() for x in old_data[1].split(',')])#stay
-            old_tickers.extend([x.strip() for x in old_data[2].split(',')])#new
-        #print( " yester day ticker ", old_tickers)
+            if filter.interval == '1d' and old_data[0] == today.strftime('%m/%d/%Y'):
+                return
+            elif filter.interval == '1d' or (filter.interval=='1h' and old_data[0] == today.strftime('%m/%d/%Y')):
+                old_tickers.extend([x.strip() for x in old_data[1].split(',')])#stay
+                old_tickers.extend([x.strip() for x in old_data[2].split(',')])#new
+
+        print(" last day ticker ", old_tickers)
+
 
         #generate data frame
         for condition in filter.conditions:
@@ -333,7 +349,8 @@ class SpacWatcher():
                     continue
                 if re.match(r'#.+',d[0]):
                     name = d[0].replace('#','')
-                    filter = AndFilter(name)
+                    interval = d[1]
+                    filter = AndFilter(name, interval)
                     self.filters[name]= filter
                     self.gs.get_or_create_tab(self.sheet_id,name,['Date','Stay','New','Removed','Last Update Time'])
                 else:
@@ -343,12 +360,14 @@ class SpacWatcher():
 
 
 
-
-
-
 if __name__ == '__main__':
 
-    args = str(sys.argv)
+    parser = argparse.ArgumentParser(description='Spac Watcher')
+    parser.add_argument('-m', type=str, help='mode')
+
+    args = parser.parse_args()
+
+    print("arg mode ",args.m)
 
     spacWatcher = SpacWatcher()
 
@@ -363,7 +382,7 @@ if __name__ == '__main__':
     '''
 
 
-    if "news" in args:
+    if "news" in args.m:
         tickers = spacWatcher.get_news_symbols()
         print(" get news ",tickers)
         news_dict = {}
@@ -373,12 +392,28 @@ if __name__ == '__main__':
             news_dict[ticker] = news
         spacWatcher.write_news_to_sheet(news_dict,True, 10)
         pass
+    elif "1h" in args.m:
+        tickers = spacWatcher.gs.read(spacWatcher.sheet_id, "all_spac!B2:B")
+        tickers = [x[0] for x in tickers]
 
-    else:
+        #tickers =["KCAC", "TDAC","CIIC"]
+        print(tickers)
+
+        price = load_hist_data(tickers)
+
+        spacWatcher.get_filter_from_gs()
+        count = 0
+        for name, filter in spacWatcher.filters.items():
+            if filter.interval==args.m:
+                count += 1
+                spacWatcher.gen_filtered_df(price, filter)
+
+    elif "1d" in args.m:
+
         tickers = spacWatcher.gs.read(spacWatcher.sheet_id,"all_spac!B2:B")
         tickers = [x[0] for x in tickers]
 
-        #tickers =["KCAC", "GMHI","CIIC"]
+        #tickers =["KCAC","CIIC","TDAC"]
         print(tickers)
 
         price = load_hist_data(tickers)
@@ -387,8 +422,11 @@ if __name__ == '__main__':
         spacWatcher.get_filter_from_gs()
         count =0
         for name,filter in spacWatcher.filters.items():
-            count += 1
-            spacWatcher.gen_filtered_df(price, filter)
+            if filter.interval==args.m:
+                count += 1
+                spacWatcher.gen_filtered_df(price, filter)
+
+
 
 
 
