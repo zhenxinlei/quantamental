@@ -309,3 +309,7 @@ if __name__ == '__main__':
 
     data = yf.download(symbols, period='2Y', interval='1d')
     plot_files = generate_nice_graph(data, symbols)
+
+    symbols=["BTC-USD","ETH-USD"]
+    data = yf.download(symbols, period='1Y', interval='1d')
+    plot_files = generate_nice_graph(data, symbols, filename="graph_crypto", index_file_name="index_crypto.html")
