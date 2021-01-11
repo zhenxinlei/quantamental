@@ -42,7 +42,7 @@ class SpacWebGrapher():
 
         return df
 
-    def getRealTimeDayVolume(self,spacWatcher,period="1Y", interval ="1d"):
+    def getRealTimeDayVolume(self,spacWatcher,period="3mo", interval ="1d",volume_usd_thd=10000000):
 
         print( "last download time ",self.last_download_time," ", time.time()-60)
         symbols=["BTC-USD","ETH-USD"]
@@ -58,17 +58,17 @@ class SpacWebGrapher():
         df = self.genVolInUsdDf(self.yf_raw_data)
 
         last_row = df['vol_usd'].iloc[-1].dropna().sort_values(ascending=False)
-        sorted_column =last_row.index
-
+        sorted_column =last_row[last_row>=volume_usd_thd].index
 
         fig = make_subplots()
         fig.update_layout( autosize=False, width=1000, height=1000,)
         traces = []
         for symbol in sorted_column:
-            traces.append(go.Scatter(mode='lines', x=df.index, y=df['vol_usd'][symbol], opacity=1, showlegend=True,name=symbol
+
+            fig.add_trace(go.Scatter(mode='lines+markers', x=df.index, y=df['vol_usd'][symbol], opacity=0.9, showlegend=True,
+                                     name=symbol,marker=dict(size=7,opacity=0.5), line=dict(width=2)
                     ))
-            fig.add_trace(go.Scatter(mode='lines', x=df.index, y=df['vol_usd'][symbol], opacity=1, showlegend=True,name=symbol
-                    ))
+
 
         fig.update_yaxes(type='log')
 
@@ -89,7 +89,7 @@ def createDashboardAppServer(server,spacgraper ,spacwatcher ):
         ),
         dcc.Interval(
             id='interval-component',
-            interval=60 * 1000,  # in milliseconds
+            interval=60 * 5 * 1000,  # in milliseconds
             n_intervals=0
         )
 
@@ -98,7 +98,7 @@ def createDashboardAppServer(server,spacgraper ,spacwatcher ):
     @app.callback([Output('example-graph', 'figure'),Output('lastupdate', component_property='children')],
                   Input('interval-component', 'n_intervals'))
     def update_metrics(n):
-        print("callback ")
+        print("callback ",n)
         return spacgrapher.getRealTimeDayVolume(spacwatcher), "Last Update:{}".format(datetime.datetime.now())
 
 
@@ -123,8 +123,13 @@ if __name__ == '__main__':
     app = initFlaskApp(spacgrapher= spacgrapher, spacwatcher= spacwatcher)
     app.run()
 
-    time.sleep(60)
-
     while True:
-        spacgrapher.getRealTimeDayVolume(spacwatcher)
-        time.sleep(60)
+
+        time.sleep(60*30)
+        now = datetime.datetime.now()
+        if (now.hour >=16 and now.minute>=30) or now.hour>16:
+            print(" market closeed ", now)
+            break
+
+    exit()
+

@@ -72,10 +72,10 @@ def _download_file(url):
 def start_ngrok():
     ngrok_address = _run_ngrok()
 
-    range = "host_url!A1:B"
+    range = "host_url!A2:B"
     gs = GoogleSheetController()
     sheet_id = SPREADSHEET_ID
-    gs.write(sheet_id,range,[[ngrok_address,datetime.now().strftime("%Y-%m-%d:%H%M%S")]])
+    gs.write(sheet_id,range,[[ngrok_address,datetime.now().strftime("%Y-%m-%d %H:%M:%S")]])
 
 
     print(f" * Running on {ngrok_address}")
