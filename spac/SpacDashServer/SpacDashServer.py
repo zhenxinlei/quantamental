@@ -112,8 +112,6 @@ def initFlaskApp( spacgrapher, spacwatcher):
     app = createDashboardAppServer(app, spacgrapher, spacwatcher)
     app.debug = True
     run_with_ngrok(app)
-
-
     return app
 
 
@@ -127,6 +125,7 @@ if __name__ == '__main__':
 
         time.sleep(60*30)
         now = datetime.datetime.now()
+        print(" current time ", now)
         if (now.hour >=16 and now.minute>=30) or now.hour>16:
             print(" market closeed ", now)
             break

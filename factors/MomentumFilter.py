@@ -30,8 +30,10 @@ def mom_entry_filter(input_df, long_ma=30, long_win=60, long_pct=0.20,
         for symbol in sell_condition[sell_condition == True].index:
             if symbol not in sell_scores:
                 sell_scores[symbol] = 1
+                sell_scores[symbol] = {"ma_list": [short_ma_list[i]], "score": 1}
             else:
-                sell_scores[symbol] += (1 + i * 0.5)
+                sell_scores[symbol]["score"] += (1 + i * 0.5)
+                sell_scores[symbol]["ma_list"].append(short_ma_list[i])
 
 
     return buy_scores, sell_scores
@@ -48,6 +50,9 @@ if __name__ == '__main__':
                    "SLQT","PLTR","NIO","BYDDF","LI","XPEV","CIIC","TSM","RXT","NKE",
                    "EDU","KKR","FTCH","NRG","OPEN","FROG"]
 
+    crypto_symbol=["SI","MARA","CAN","GBTC","NCTY","RIOT","BK","MSTR","FTFY"]
+
+    symbols.extend(crypto_symbol)
 
     yf_raw_data = yf.download(symbols, period='1Y', interval='1d')
     df = yf_raw_data.copy()

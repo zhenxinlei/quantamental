@@ -1,2 +1,5 @@
 */30 8-17 * * 1-5 /Users/ZhenxinLei/MyWork/quantamental/cronjob/spac_new_script.sh > /tmp/cron1.log
 5 22 * * 1-5 /Users/ZhenxinLei/MyWork/quantamental/cronjob/script.sh > /tmp/cron2.log
+
+# dash webserver startup
+#10 9 * * 1-5 /Users/ZhenxinLei/MyWork/quantamental/cronjob/spac_server.sh > /tmp/cron_server.log

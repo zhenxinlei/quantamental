@@ -31,9 +31,11 @@ class GoogleSheetController:
                 flow = InstalledAppFlow.from_client_secrets_file(
                     '/Users/ZhenxinLei/Desktop/tmp/credentials.json', SCOPES)
                 creds = flow.run_local_server(port=0)
+                print("after getting creds ")
             # Save the credentials for the next run
             with open('token.pickle', 'wb') as token:
                 pickle.dump(creds, token)
+            print(" create pickle ")
 
         service = build('sheets', 'v4', credentials=creds)
 
@@ -45,7 +47,7 @@ class GoogleSheetController:
             service =self.__getService()
             request = service.spreadsheets().values().get(spreadsheetId=sheet_id, range=range)
             response = request.execute()
-            print("read response {}".format(response))
+            #print("read response {}".format(response))
             return response['values']
         except:
             return None
@@ -76,11 +78,10 @@ class GoogleSheetController:
             request = service.spreadsheets().values().get(spreadsheetId=sheet_id, range=tab_name+"!A1:A2")
             response=request.execute()
 
-            print(response)
+            #print(response)
         except HttpError as e:
             e_str = e.content.decode()
             if 'Unable to parse range: ' in e_str and  header != None:
-
 
                 body = {
 
@@ -125,4 +126,4 @@ if __name__ == '__main__':
     #controller.get_or_create_tab(SAMPLE_SPREADSHEET_ID, "playground", None)
     #controller.get_or_create_tab(SAMPLE_SPREADSHEET_ID, "playground2",['Date','Stay','New','Removed'])
 
-    controller.append(SAMPLE_SPREADSHEET_ID, "playground", [])
+    controller.append(SAMPLE_SPREADSHEET_ID, "playground", ['Sample'])

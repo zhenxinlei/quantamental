@@ -124,7 +124,7 @@ def generate_nice_graph(df, symbols, filename="graph", index_file_name="index.ht
 
     #get long/short filtered symbol
     long_symbols, short_symbols = mom_fact.mom_entry_filter(df)
-
+    print(" long symbols ", long_symbols, "\n short symbols ", short_symbols)
     # indiviual symbol
     for sym_index in range(len(symbols)):
 
@@ -169,7 +169,7 @@ def generate_nice_graph(df, symbols, filename="graph", index_file_name="index.ht
             scores = short_symbols[symbol]
             direction = "SELL"
         if scores is not None:
-            title = "{index} {symbol}: {direction} {ma_list}".format(ma_list=scores['ma_list'], direction=direction,
+            title = "{index} {symbol}: {direction} {ma}".format(ma=scores['ma_list'], direction=direction,
                                                                      symbol=symbol, index=sym_index)
         else:
             title = "{index} {symbol} ".format(symbol=symbol, index=sym_index)
@@ -298,10 +298,12 @@ if __name__ == '__main__':
                "VZ", "M", "APO", "COST", "QCOM", "MU", "LMT", "SBUX", "DIS", "ASML",
                "DADA", "TAL", "SE", "TDOC", "SDC", "AXP", "MA", "UAL","U","SHLX",
                "SLQT","PLTR","NIO","BYDDF","LI","XPEV","CIIC","TSM","RXT","NKE",
-               "EDU","KKR","FTCH","NRG","OPEN"]
+               "EDU","KKR","FTCH","NRG","OPEN","GE"]
 
     #symbols = ["ZYXI", "MSFT", "AAPL", "SPY", "VXX", "BABA", "NVDA", "BYND","ADS"]
+    crypto_symbol=["SI","MARA","CAN","GBTC","NCTY","RIOT","BK","MSTR","FTFY"]
 
+    symbols.extend(crypto_symbol)
 
     symbols = sorted(list(set(symbols)))
     print(symbols)
@@ -310,6 +312,6 @@ if __name__ == '__main__':
     data = yf.download(symbols, period='2Y', interval='1d')
     plot_files = generate_nice_graph(data, symbols)
 
-    symbols=["BTC-USD","ETH-USD"]
+    symbols=["BTC-USD","ETH-USD","DOGE-USD","BNB-USD"]
     data = yf.download(symbols, period='1Y', interval='1d')
     plot_files = generate_nice_graph(data, symbols, filename="graph_crypto", index_file_name="index_crypto.html")
